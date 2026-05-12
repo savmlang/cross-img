@@ -252,6 +252,7 @@ main() {
         --disable-kvm \
         --disable-vnc \
         --disable-guest-agent \
+        --extra-ldflags="-Wl,--allow-multiple-definition" \
         --enable-linux-user \
         --static \
         ${virtfs} \
