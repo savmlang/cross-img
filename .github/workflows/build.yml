@@ -1,0 +1,62 @@
+name: Cross Build
+
+on:
+  push:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+
+jobs:
+  dockerbuild:
+    name: Docker Build Cross Image (ghcr)
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - arch: armv7
+            dockerfile: Dockerfile.armv7-unknown-linux-gnueabihf
+            deb_arch: armhf
+
+          - arch: riscv64
+            dockerfile: Dockerfile.riscv64gc-unknown-linux-gnu
+            deb_arch: riscv64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.arch }}-noble
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.arch }}-${{ github.sha }}
+          build-args: |
+            CROSS_DEB_ARCH=${{ matrix.deb_arch }}
+            QEMU_CONFIGURE_ARGS=--static --disable-system --target-list=${{ matrix.arch }}-linux-user
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
