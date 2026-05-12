@@ -136,7 +136,7 @@ main() {
         deps=(libcrypt1:"${arch}")
         ;;
     riscv64)
-        kernel='6.*-riscv64'
+        kernel='-riscv64'
         debsource="deb http://deb.debian.org/debian unstable main"
         deps=(libcrypt1:"${arch}")
         ;;
